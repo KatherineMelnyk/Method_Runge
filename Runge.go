@@ -10,6 +10,26 @@ import (
 	"gonum.org/v1/plot/vg"
 )
 
+type Points struct {
+	X []float64
+	Y []float64
+}
+
+func (p *Points) Append(x, y float64) {
+	p.X = append(p.X, x)
+	p.Y = append(p.Y, y)
+}
+
+// Len returns the number of x, y pairs.
+func (p Points) Len() int {
+	return len(p.X)
+}
+
+// XY returns an x, y pair.
+func (p Points) XY(i int) (float64, float64) {
+	return p.X[i], p.Y[i]
+}
+
 func U1(x, u1, u2, u3 float64) float64 {
 	return u2
 }
@@ -51,6 +71,8 @@ func RK4Step(x, u1, u2, u3, h float64) (float64, float64, float64) {
 }
 
 func main() {
+	p := Points{}
+
 	i := 0
 	x0, xN := 0., 1.
 	u10 := 4.
@@ -65,6 +87,7 @@ func main() {
 		u1, u2, u3 = RK4Step(x, u1, u2, u3, h)
 		fmt.Printf("x=%.5f\t ,u=%.5f\t ,U=%.5f\t, diff=%.5f\n", x, u1, F(x), math.Abs(F(x)-u1))
 		fmt.Print("\n")
+		p.Append(x, u1)
 		x += h
 		i++
 	}
@@ -74,10 +97,15 @@ func main() {
 	ImageFunc.Width = vg.Inch / 20
 	ImageFunc.Samples = 100
 
+	ImageFunc2, _ := plotter.NewLine(p)
+	ImageFunc2.Color = color.RGBA{R: 0, G: 25, B: 75, A: 150}
+	ImageFunc2.Width = vg.Inch / 20
+
 	pl, _ := plot.New()
 	pl.X.Min, pl.X.Max = 0, 1
 	pl.Y.Min, pl.Y.Max = 0, 10
 	pl.Add(ImageFunc)
+	pl.Add(ImageFunc2)
 
 	pl.Title.Text = "Approximation"
 	pl.Title.Font.Size = vg.Inch
@@ -85,6 +113,7 @@ func main() {
 	pl.Legend.XOffs = -vg.Inch
 	pl.Legend.YOffs = vg.Inch / 2
 	pl.Legend.Add("Function", ImageFunc)
+	pl.Legend.Add("MyFunction", ImageFunc2)
 
 	if err := pl.Save(14*vg.Inch, 14*vg.Inch, "Task1.png"); err != nil {
 		panic(err.Error())
